@@ -9,7 +9,6 @@
 
 $ownerObject = $null
 $ErrorActionPreference = "Stop"
-pause
 
 # Test ACL capabilities
 if (-not ([string]::IsNullOrWhiteSpace($OwnerName))) {
