@@ -9,7 +9,7 @@
 
 $ownerObject = $null
 $ErrorActionPreference = "Stop"
-
+pause
 
 # Test ACL capabilities
 if (-not ([string]::IsNullOrWhiteSpace($OwnerName))) {
@@ -52,7 +52,7 @@ Get-ChildItem $ADHomeFolderPath -Directory | ForEach-Object {
 
 
     # Remove all ACEs
-    $acesRemove = $acl.Access | ?{ $_.IsInherited -eq $false }
+    $acesRemove = $acl.Access | Where-Object { $_.IsInherited -eq $false }
     foreach ($ace in $acesRemove) {
         $acl.RemoveAccessRuleAll($ace)
     }

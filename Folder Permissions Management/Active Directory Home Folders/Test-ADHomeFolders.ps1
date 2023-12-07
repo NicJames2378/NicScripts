@@ -11,7 +11,7 @@
 
 $allHomeDirectories = [System.Collections.Generic.List[PSCustomObject]]::new()
 
-Get-ADUser -Properties HomeDirectory -Filter * | Where { $null -ne $_.HomeDirectory } | Select SamAccountName,UserPrincipalName,HomeDirectory,Enabled | 
+Get-ADUser -Properties HomeDirectory -Filter * | Where-Object { $null -ne $_.HomeDirectory } | Select-Object SamAccountName,UserPrincipalName,HomeDirectory,Enabled | 
 ForEach-Object {
 	$folder = $_.HomeDirectory.Split($_.HomeDirectory[0])[-1]
 	$name = $_.SamAccountName
@@ -30,26 +30,23 @@ ForEach-Object {
 "Scanning as user [$($env:USERDOMAIN)\$($env:USERNAME)]"
 
 for ($i = 0; $i -lt $allHomeDirectories.Count; $i++) {
-    $dirPath = $allHomeDirectories[$i].Path
-
     # Report connectivity (imperfect!)
-    $reachable = Test-Path $dirPath
-    $allHomeDirectories[$i] | Add-Member -MemberType NoteProperty -Name Reachable -Value (Test-Path $dirPath)
+    $reachable = Test-Path $allHomeDirectories[$i].Path
+    $allHomeDirectories[$i] | Add-Member -MemberType NoteProperty -Name Reachable -Value $reachable
 
     # If able to connect, check stats on the folder
     if ($reachable) {
-        $item = Get-Item -LiteralPath $dirPath
-        $daysSinceLastAccess = [System.Math]::Round(((Get-Date) - ((Get-Item -LiteralPath $allHomeDirectories[$i].Path).LastAccessTime)).TotalDays)
+        $daysSinceLastAccess = [System.Math]::Round(((Get-Date) - ((Get-Item -LiteralPath $allHomeDirectories[$i].Path).LastAccessTime)).TotalDays, 2)
         $allHomeDirectories[$i] | Add-Member -MemberType NoteProperty -Name DaysSinceLastAccessed -Value $daysSinceLastAccess
     } else {
         $allHomeDirectories[$i] | Add-Member -MemberType NoteProperty -Name DaysSinceLastAccessed -Value '-'
     }
 
     # Check if the path seems to be a standard path
-    $counts = $allHomeDirectories | % { $_.Path.Substring(0, $_.Path.LastIndexOf($_.Path[0])).ToLower() -replace '/', '\' } | Group-Object
-    $pathIsMajority = $o[0].Count -gt ($allHomeDirectories.Count * 0.7)
+    $counts = $allHomeDirectories | ForEach-Object { $_.Path.Substring(0, $_.Path.LastIndexOf($_.Path[0])).ToLower() -replace '/', '\' } | Group-Object
+    $pathIsMajority = $counts[0].Count -gt ($allHomeDirectories.Count * 0.7)
 
     $allHomeDirectories[$i] | Add-Member -MemberType NoteProperty -Name IsCommonPath -Value $pathIsMajority
 }
 
-$allHomeDirectories
+$allHomeDirectories | Format-Table -AutoSize
