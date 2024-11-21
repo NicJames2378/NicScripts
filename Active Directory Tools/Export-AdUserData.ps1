@@ -55,6 +55,7 @@ Name used for the ObjectGUID column.
 [CmdletBinding(DefaultParameterSetName = 'QuickFilter')]
 param (
     [string] $SearchBase = $null,
+    [string] $SearchServer = $null,
     [string] $ExportPath = (Join-Path $env:USERPROFILE Downloads),
 
     [Parameter(ParameterSetName = 'QuickFilter')]
@@ -131,10 +132,20 @@ if ($PSCmdlet.ParameterSetName -eq 'QuickFilter') {
 
 if ([string]::IsNullOrWhiteSpace($SearchBase)) {
     "SearchBase not supplied..."
-    $users = Get-ADUser -Filter $filter -Properties PasswordNeverExpires, Manager, GivenName, Surname, EmailAddress, Department, pager
+    if ([string]::IsNullOrWhiteSpace($SearchServer)) {
+        "SearchServer not supplied. Attempting to find default..."
+        $users = Get-ADUser -Filter $filter -Properties PasswordNeverExpires, Manager, GivenName, Surname, EmailAddress, Department, pager
+    } else {
+        $users = Get-ADUser -Server $SearchServer -Filter $filter -Properties PasswordNeverExpires, Manager, GivenName, Surname, EmailAddress, Department, pager
+    }
 } else {
     "SearchBase: $SearchBase"
-    $users = Get-ADUser -SearchBase $SearchBase -Filter $filter -Properties PasswordNeverExpires, Manager, GivenName, Surname, EmailAddress, Department, pager
+    if ([string]::IsNullOrWhiteSpace($SearchServer)) {
+        "SearchServer not supplied. Attempting to find default..."
+        $users = Get-ADUser -SearchBase $SearchBase -Filter $filter -Properties PasswordNeverExpires, Manager, GivenName, Surname, EmailAddress, Department, pager
+    } else {
+        $users = Get-ADUser -SearchBase $SearchBase -Server $SearchServer -Filter $filter -Properties PasswordNeverExpires, Manager, GivenName, Surname, EmailAddress, Department, pager
+    }    
 }
 
 $users | 
