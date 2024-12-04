@@ -22,7 +22,7 @@ The location to save the installers to.
 Defaults to '(Join-Path $env:TEMP "GlobalProtect")'
 
 .EXAMPLE
-Get-PAGlobalProtect -PaloAddress 192.168.0.200
+Update-PAGlobalProtectInstallers.ps1 -PaloAddress 192.168.0.200
 #>
 
 param (
