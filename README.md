@@ -37,7 +37,7 @@ For an example using `/CISA Vulnerability Management/Get-CisaReport.ps1`:
 Then, when calling the script from PowerShell, do it like so:
 ```powershell
 # Read parameters from PSD1 file
-$params = Import-PowerShellDataFile .\params.psd1
+$params = Import-PowerShellDataFile .\params_Get-CisaReport.psd1
 
 # Splat them at the script, and add any additionals after.
 .\Get-CisaReport.ps1 @params -BulletinUrl "https://www.cisa.gov/news-events/bulletins/sb24-331"
