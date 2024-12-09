@@ -49,7 +49,7 @@ param (
 )
 
 # SMTP configuration settings
-$emailFrom = 'changeme@your_domain.com'
+$emailFrom = 'changeme@your_domain.local'
 $emailSubject = 'Purview Compliance Action'
 $emailBody = "Compliance action for #InsertUserHere# completed." # '#InsertUserHere#' will be substituted with the username of whoever started the compliance search.
 $emailServer = 'mail-relay.example.local' # Your mail relay; could be Postfix, IIS SMTP, etc. Non-local relays may require editing the bottom of this script.
