@@ -110,8 +110,11 @@ if ($SkipConfigurator) {
 } else {
     "Opening Microsoft Purview. Please create your compliance search using the online configurator."
     Start-Sleep 2
-    Start-Process "https://compliance.microsoft.com/contentsearchv2?viewid=search"
-	"Microsoft Purview opened. Proceed once your compliance search is created."
+    # This compliance page will be deprecated my Microsoft.
+    # Start-Process "https://compliance.microsoft.com/contentsearchv2?viewid=search"
+	
+    Start-Process 'https://purview.microsoft.com/ediscovery/contentsearchv2?viewid=search'
+    "Microsoft Purview opened. Proceed once your compliance search is created."
 	pause
 }
 
