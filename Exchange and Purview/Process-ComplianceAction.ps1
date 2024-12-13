@@ -4,59 +4,60 @@
 .SYNOPSIS
 Simplifies the process of creating compliance searching and removing unwanted emails.
 
-	# Skips opening the page to create a Content Search
-    [switch] $SkipConfigurator,
-	# Skips waiting for completion and sending an email
-    [switch] $SkipCompletionEmail,
-	# Waits before running the deletion. This is in case you want to export or see the results.
-	[switch] $PauseBeforeDeletion,
-	# Where to send the completion email to.
-    [string] $EmailToOnCompletion
-
 .DESCRIPTION
 A script to simplify the process of creating a Content Search, purging all findings on completion, and notifying an email adress afterwards. In order to receive an email notification, the executing terminal is required to stay open.
 
 .PARAMETER SkipConfigurator
 If true, will skip opening the web page for configuring a Content Search.
 
-.PARAMETER SkipCompletionEmail
-If true, will skip sending an email to the specified EmailToOnCompletion address. Only checked if the EmailToOnCompletion address isn't blank.
-
 .PARAMETER PauseBeforeDeletion
 If true, pauses execution before deleting all found emails. Intended for users to check the discovered emails before processing them.
 
-.PARAMETER EmailToOnCompletion
+.PARAMETER EmailTo
 An email address to notify when the discovered emails are deleted.
+
+.PARAMETER EmailFrom
+An email address to send from.
+
+.PARAMETER EmailServer
+The FQDN or IP of your email relay server. This could be Postfix, IIS SMTP, etc. Non-local relays may require editing the bottom of this script.
+
+.PARAMETER EmailPort
+The port your email relay uses. Defaults to port 25.
 
 .EXAMPLE
 # Opens the configurator page, waits for a search to finish, deletes all findings, then emails user@example.com upon completion.
-.\Process-ComplianceAction.ps1 -EmailToOnCompletion user@example.com
+Process-ComplianceAction.ps1 -EmailTo user@user@email.local -EmailFrom security@email.local -EmailServer relay.email.local
 
 .EXAMPLE
 # Skips opening the configurator page, waits for a search to finish, pauses for confirmation before deleting findings; does not email a completion message.
-.\Process-ComplianceAction.ps1 -SkipConfigurator -PauseBeforeDeletion
+Process-ComplianceAction.ps1 -SkipConfigurator -PauseBeforeDeletion
 #>
 
+[CmdletBinding(DefaultParametersetName='None')] 
 param (
 	# Skips opening the page to create a Content Search
     [switch] $SkipConfigurator,
-	# Skips waiting for completion and sending an email
-    [switch] $SkipCompletionEmail,
 	# Waits before running the deletion. This is in case you want to export or see the results.
 	[switch] $PauseBeforeDeletion,
-	# Where to send the completion email to.
-    [string] $EmailToOnCompletion
+
+    # Additional email settings will only be required if the EmailTo is supplied, at which point all are required.
+    [Parameter(ParameterSetName='Email', Mandatory=$false)]
+    [string] $EmailTo = $null,
+    [Parameter(ParameterSetName='Email', Mandatory=$true)]
+    [string] $EmailFrom,
+    [Parameter(ParameterSetName='Email', Mandatory=$true)]
+    [string] $EmailServer,
+    [Parameter(ParameterSetName='Email')]
+    [string] $EmailPort = 25
 )
 
 # SMTP configuration settings
-$emailFrom = 'changeme@your_domain.local'
 $emailSubject = 'Purview Compliance Action'
 $emailBody = "Compliance action for #InsertUserHere# completed." # '#InsertUserHere#' will be substituted with the username of whoever started the compliance search.
-$emailServer = 'mail-relay.example.local' # Your mail relay; could be Postfix, IIS SMTP, etc. Non-local relays may require editing the bottom of this script.
-$emailPort = 25
 
 # If we're not skipping the completion email, we need both a EmailToOnCompletion and configured SNMP settings
-if ( -not $SkipCompletionEmail -and (([String]::IsNullOrWhiteSpace($EmailToOnCompletion) -or $emailFrom -eq 'changeme@your_domain.com')) ) {
+if ( -not [String]::IsNullOrWhiteSpace($EmailTo)) {
     Write-Warning "SNMP configurations have not been completed. Please edit this script to use your proper SNMP settings!"
     exit 9
 }
@@ -93,7 +94,6 @@ if ($tryCreateSession) {
     "Attempting to create new Exchange Powershell session. Please login to popup. If a popup does not appear, close this Window and retry the script from a desktop version of Powershell."
     try {
         Connect-IPPSSession
-		pause
     } catch {
         Write-Warning $Error[0]
         Write-Host -ForegroundColor Red "Failed to create remote session to exchange! Fix above warning and rerun script."
@@ -190,8 +190,8 @@ if ($PauseBeforeDeletion) {
 $compSearAction = New-ComplianceSearchAction -SearchName $($foundSearch.Name) -Purge -PurgeType HardDelete -Confirm:$false -Force
 "The Compliance Action has been started."
 
-if (-not $SkipCompletionEmail) {
-    "Awaiting Completion of Compliance Action. Will email $EmailToOnCompletion when finished."
+if (-not [string]::IsNullOrWhiteSpace($EmailTo)) {
+    "Awaiting Completion of Compliance Action. Will email $EmailTo when finished."
     "Do not close this window! (Minimizing is ok! It will close when finished)"
 	
 	
@@ -211,7 +211,7 @@ if (-not $SkipCompletionEmail) {
 	} while ( $actionStatus -ine "Completed" )
 
     # Once completed...
-    Send-MailMessage -From $emailFrom -To $EmailToOnCompletion -Subject $emailSubject -Body $($emailBody.Replace("#InsertUserHere#", $compSearAction.Name)) -SmtpServer $emailServer -port $emailPort
+    Send-MailMessage -From $EmailFrom -To $EmailTo -Subject $emailSubject -Body $($emailBody.Replace("#InsertUserHere#", $compSearAction.Name)) -SmtpServer $EmailServer -port $EmailPort
 } else {
-    "SkipCompletionEmail is toggled. This terminal can now be closed."
+    "Email settings have not been defined. This terminal can now be closed."
 }
