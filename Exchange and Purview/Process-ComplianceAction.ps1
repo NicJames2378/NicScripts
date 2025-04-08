@@ -57,7 +57,7 @@ $emailSubject = 'Purview Compliance Action'
 $emailBody = "Compliance action for #InsertUserHere# completed." # '#InsertUserHere#' will be substituted with the username of whoever started the compliance search.
 
 # If we're not skipping the completion email, we need both a EmailToOnCompletion and configured SNMP settings
-if ( -not [String]::IsNullOrWhiteSpace($EmailTo)) {
+if ( [String]::IsNullOrWhiteSpace($EmailTo)) {
     Write-Warning "SNMP configurations have not been completed. Please edit this script to use your proper SNMP settings!"
     exit 9
 }
