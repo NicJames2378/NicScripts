@@ -56,10 +56,8 @@ param (
 $emailSubject = 'Purview Compliance Action'
 $emailBody = "Compliance action for #InsertUserHere# completed." # '#InsertUserHere#' will be substituted with the username of whoever started the compliance search.
 
-# If we're not skipping the completion email, we need both a EmailToOnCompletion and configured SNMP settings
 if ( [String]::IsNullOrWhiteSpace($EmailTo)) {
-    Write-Warning "SNMP configurations have not been completed. Please edit this script to use your proper SNMP settings!"
-    exit 9
+    Write-Warning "SNMP configurations have not been supplied. No notification will be send on completion!"
 }
 
 # Install and import the needed commands
@@ -164,13 +162,13 @@ do {
 
 
 # Await completion of search
-$searchName = $foundSearch.Name
 $searchStatus = "N/A"
+Start-ComplianceSearch -Identity $foundSearch.Name | Out-Null
 
 do {
-	$searchQuery = Get-ComplianceSearch -Identity $searchName
+	$searchQuery = Get-ComplianceSearch -Identity $foundSearch.Name
 	$searchStatus = $searchQuery.Status
-	"Status of Search [$searchName] is [$searchStatus]."
+	"Status of Search [$($foundSearch.Name)] is [$searchStatus]."
 	
 	if ($searchStatus -ine "Completed") {
 		"Waiting for 5 minutes..."
@@ -187,7 +185,7 @@ if ($PauseBeforeDeletion) {
 
 
 # Create a purge action based on the Content Search
-$compSearAction = New-ComplianceSearchAction -SearchName $($foundSearch.Name) -Purge -PurgeType HardDelete -Confirm:$false -Force
+$compSearchAction = New-ComplianceSearchAction -SearchName $foundSearch.Name -Purge -PurgeType HardDelete -Confirm:$false -Force -ErrorAction Stop
 "The Compliance Action has been started."
 
 if (-not [string]::IsNullOrWhiteSpace($EmailTo)) {
@@ -196,13 +194,13 @@ if (-not [string]::IsNullOrWhiteSpace($EmailTo)) {
 	
 	
 	# Await completion of search
-	$compActionID = $compSearAction.Identity
+	$compActionID = $compSearchAction.Identity
 	$actionStatus = "N/A"
 
 	do {
 		$actionQuery = Get-ComplianceSearchAction -Identity $compActionID
 		$actionStatus = $actionQuery.Status
-		"Status of Action [$($compSearAction.Name)] is [$actionStatus]."
+		"Status of Action [$($compSearchAction.Name)] is [$actionStatus]."
 		
 		if ($actionStatus -ine "Completed") {
 			"Waiting for 5 minutes..."
@@ -211,7 +209,7 @@ if (-not [string]::IsNullOrWhiteSpace($EmailTo)) {
 	} while ( $actionStatus -ine "Completed" )
 
     # Once completed...
-    Send-MailMessage -From $EmailFrom -To $EmailTo -Subject $emailSubject -Body $($emailBody.Replace("#InsertUserHere#", $compSearAction.Name)) -SmtpServer $EmailServer -port $EmailPort
+    Send-MailMessage -From $EmailFrom -To $EmailTo -Subject $emailSubject -Body $($emailBody.Replace("#InsertUserHere#", $compSearchAction.Name)) -SmtpServer $EmailServer -port $EmailPort
 } else {
     "Email settings have not been defined. This terminal can now be closed."
 }
