@@ -1,8 +1,8 @@
 #! /bin/bash
 # Written by 2025-07-10
 
-This script is intended to be used with iVentoy to make setting up a chainloaded environment less problematic.
-Any illicit use is strictly prohibited!
+# This script is intended to be used with iVentoy to make setting up a chainloaded environment less problematic.
+# Any illicit use is strictly prohibited!
 
 # A helper for backuping up and restoring the configuration of iVentoy for the purposes of making migrations
 # from container to VM easier. Additionally, it proved helpful in trying to get chainloading working from
